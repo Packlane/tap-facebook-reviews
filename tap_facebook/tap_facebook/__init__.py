@@ -3,102 +3,61 @@ import os
 import json
 import singer
 from singer import utils
+from singer.catalog import Catalog, CatalogEntry, Schema
+from . import streams as streams_
+from .context import Context
+from . import schemas
 
-REQUIRED_CONFIG_KEYS = ["start_date", "username", "password"]
+REQUIRED_CONFIG_KEYS = ["start_date", "smile_private_key"]
 LOGGER = singer.get_logger()
 
-def get_abs_path(path):
-    return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
-# Load schemas from schemas folder
-def load_schemas():
-    schemas = {}
+def check_credentials_are_authorized(ctx):
+    pass
 
-    for filename in os.listdir(get_abs_path('schemas')):
-        path = get_abs_path('schemas') + '/' + filename
-        file_raw = filename.replace('.json', '')
-        with open(path) as file:
-            schemas[file_raw] = json.load(file)
 
-    return schemas
+def discover(ctx):
+    check_credentials_are_authorized(ctx)
+    catalog = Catalog([])
+    for tap_stream_id in schemas.stream_ids:
+        schema = Schema.from_dict(schemas.load_schema(tap_stream_id),
+                                  inclusion="automatic")
+        catalog.streams.append(CatalogEntry(
+            stream=tap_stream_id,
+            tap_stream_id=tap_stream_id,
+            key_properties=schemas.PK_FIELDS[tap_stream_id],
+            schema=schema,
+        ))
+    return catalog
 
-def discover():
-    raw_schemas = load_schemas()
-    streams = []
 
-    for schema_name, schema in raw_schemas.items():
+# TODO ignores the catalog properties right now
+# reinstate the ctx.selected_stream_ids
+def sync(ctx):
 
-        # TODO: populate any metadata and stream's key properties here..
-        stream_metadata = []
-        stream_key_properties = []
+    # Load and write all streams because of dependent streams
+    # needing schema written up front
+    for s in streams_.all_streams:
+        schemas.load_and_write_schema(s.tap_stream_id)
 
-        # create and add catalog entry
-        catalog_entry = {
-            'stream': schema_name,
-            'tap_stream_id': schema_name,
-            'schema': schema,
-            'metadata' : [],
-            'key_properties': []
-        }
-        streams.append(catalog_entry)
-
-    return {'streams': streams}
-
-def get_selected_streams(catalog):
-    '''
-    Gets selected streams.  Checks schema's 'selected' first (legacy)
-    and then checks metadata (current), looking for an empty breadcrumb
-    and mdata with a 'selected' entry
-    '''
-    selected_streams = []
-    for stream in catalog['streams']:
-        stream_metadata = stream['metadata']
-        if stream['schema'].get('selected', False):
-            selected_streams.append(stream['tap_stream_id'])
-        else:
-            for entry in stream_metadata:
-                # stream metadata will have empty breadcrumb
-                if not entry['breadcrumb'] and entry['metadata'].get('selected',None):
-                    selected_streams.append(stream['tap_stream_id'])
-
-    return selected_streams
-
-def sync(config, state, catalog):
-
-    selected_stream_ids = get_selected_streams(catalog)
-
-    # Loop over streams in catalog
-    for stream in catalog['streams']:
-        stream_id = stream['tap_stream_id']
-        stream_schema = stream['schema']
-        if stream_id in selected_stream_ids:
-            # TODO: sync code for stream goes here...
-            LOGGER.info('Syncing stream:' + stream_id)
-    return
+    # Sync all direct streams
+    for s in streams_.all_streams:
+        if s.direct_stream:
+            s.sync(ctx)
+    ctx.write_state()
 
 @utils.handle_top_exception(LOGGER)
 def main():
-
-    # Parse command line arguments
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-
-    # If discover flag was passed, run discovery mode and dump output to stdout
+    ctx = Context(args.config, args.state)
+    ctx.update_start_date_bookmark("updated_at")
     if args.discover:
-        catalog = discover()
-        print(json.dumps(catalog, indent=2))
-    # Otherwise run in sync mode
+        discover(ctx).dump()
+        print()
     else:
-
-        # 'properties' is the legacy name of the catalog
-        if args.properties:
-            catalog = args.properties
-        # 'catalog' is the current name
-        elif args.catalog:
-            catalog = args.catalog
-        else:
-            catalog =  discover()
-
-        sync(args.config, args.state, catalog)
+        ctx.catalog = Catalog.from_dict(args.properties) \
+            if args.properties else discover(ctx)
+        sync(ctx)
 
 if __name__ == "__main__":
     main()

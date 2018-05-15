@@ -1,4 +1,4 @@
 {
-  "access_token": "my_username",
+  "facebook_access_token": "test_access_token",
   "start_date": "2017-01-01T00:00:00Z"
 }

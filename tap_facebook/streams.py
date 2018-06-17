@@ -1,5 +1,4 @@
 import singer
-from .http import Paginator
 import dateutil
 
 LOGGER = singer.get_logger()
@@ -34,10 +33,13 @@ class Stream(object):
 
 
 class Ratings(Stream):
-    def sync(self, ctx, customer_id):
+    def sync(self, ctx):
         path = "/ratings"
+        # TODO(ian): get customer id somehow
+        customer_id = 'test'
         params = {'customer_id': customer_id}
-        activities = ctx.client.GET(path, {'params': params}, tap_stream_id=self.tap_stream_id)
+        # TODO(ian): Do we want params below?
+        activities = ctx.client.GET(path, {}, tap_stream_id=self.tap_stream_id)
         rx = activities.get("activities")
         if rx is not None:
             for r in rx:

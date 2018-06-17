@@ -8,7 +8,7 @@ from . import streams as streams_
 from .context import Context
 from . import schemas
 
-REQUIRED_CONFIG_KEYS = ["start_date", "smile_private_key"]
+REQUIRED_CONFIG_KEYS = ["start_date", "facebook_access_token"]
 LOGGER = singer.get_logger()
 
 

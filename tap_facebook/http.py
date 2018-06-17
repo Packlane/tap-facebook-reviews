@@ -4,7 +4,7 @@ from singer import metrics
 from datetime import datetime, timedelta
 import time
 
-BASE_URL = "https://graph.facebook.com/v3.0/"
+BASE_URL = "https://graph.facebook.com/"
 
 
 class RateLimitException(Exception):
@@ -24,6 +24,7 @@ class Client(object):
         self.session = requests.Session()
         self.token = config["facebook_access_token"]
         self.next_request_at = datetime.now()
+        self.user_agent = None
 
     def prepare_and_send(self, request):
         if self.user_agent:
@@ -31,14 +32,14 @@ class Client(object):
         return self.session.send(request.prepare())
 
     def url(self, path, user_id):
-        path_with_user_id = _join(path, user_id)
+        path_with_user_id = _join(user_id, path)
         url = _join(BASE_URL, path_with_user_id)
-        return _join(url, "?access_token={0}".format(self.token))
+        return "{0}?access_token={1}".format(url, self.token)
 
     def create_get_request(self, path, **kwargs):
         return requests.Request(method="GET",
-                                url=self.url(path),
-                                headers=headers,
+                                # TODO(ian): replace the user_id below with something
+                                url=self.url(path, "Packlane"),
                                 **kwargs)
 
     @backoff.on_exception(backoff.expo,

@@ -5,16 +5,14 @@ from singer import utils
 
 
 class IDS(object):
-    Activities = "activities"
-    Customers = "customers"
+    Ratings = "ratings"
 
 
 stream_ids = [getattr(IDS, x) for x in dir(IDS)
               if not x.startswith("__")]
 
 PK_FIELDS = {
-    IDS.Activities: ["id"],
-    IDS.Customers: ["id"],
+    IDS.Ratings: ["id"],
 }
 
 

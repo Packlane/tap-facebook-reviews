@@ -1,6 +1,6 @@
 import requests
 
-ACCESS_TOKEN = 'EAACEdEose0cBAGdLyurTx1wx9fMoNAZAvRqgr1sHy7fAMUsgjwDQR1AdIK9RgxygWI6kaGz8ToYUPjxolVAvjnBApuF3Pgwe9W9Of9L1AMf1O412M1dha9DK0aXZANyHlu53omxbDX6SnxZAX6LGOZAigeP0iY512SbiYqcZC9ZBSP9O7Q7Xo2OGZCKKCObu14ZD'
+ACCESS_TOKEN = 'EAACEdEose0cBAPUnMZAwezDcvfO8haKa1BZAOHsgOJZBa6i47nOS414VmHRgZBDxD04McpHZArtmP5r2zmxGINlYEras77cpr3UrjdVbLTbb2ZA3l2U12e3OmDTSARrQumnPOTw0A9BAzuqBK7mGEZCkoFpVgGM6v14BH7aBh9xEVfV0wsdPzqMfvILTzaZCa8TgwDmajNKajZAgReuA5u9xD'
 
 
 def get_user_avatar(user_id):
@@ -35,12 +35,16 @@ def get_facebook_ratings(limit=25, offset=0):
         )
     )
 
-    for rating in r.json():
-        user_id = rating['reviewer']['id']
-        rating['reviewer']['avatar_url'] = get_user_avatar(user_id)
+    out = []
 
-    return r.json()
+    for rating in r.json().get('data', []):
+        user_id = rating['reviewer']['id']
+        avatar = get_user_avatar(user_id)
+        new_rating = rating['avatar_url'] = get_user_avatar(user_id)
+        out.append({rating['reviewer']['id']: new_rating})
+
+    return out
 
 
 if __name__ == '__main__':
-    get_facebook_ratings()
+    print(get_facebook_ratings())

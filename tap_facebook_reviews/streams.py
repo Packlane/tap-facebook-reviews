@@ -35,12 +35,8 @@ class Stream(object):
 class Ratings(Stream):
     def sync(self, ctx):
         path = "/ratings"
-        # TODO(ian): get customer id somehow
-        customer_id = 'test'
-        params = {'customer_id': customer_id}
-        # TODO(ian): Do we want params below?
-        activities = ctx.client.GET(path, {}, tap_stream_id=self.tap_stream_id)
-        rx = activities.get("activities")
+        ratings = ctx.client.GET(path, {}, tap_stream_id=self.tap_stream_id)
+        rx = ratings.get("ratings")
         if rx is not None:
             for r in rx:
                 # Lacking in core actitivity types

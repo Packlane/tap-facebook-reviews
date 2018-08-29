@@ -1,2 +1,2 @@
 include LICENSE
-include tap_facebook/schemas/*.json
+include tap_facebook_reviews/schemas/*.json

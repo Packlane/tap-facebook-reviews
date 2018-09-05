@@ -2,7 +2,7 @@
 from setuptools import setup
 
 setup(
-    name="tap_facebook_reviews",
+    name="tap-facebook-reviews",
     version="0.1.0",
     description="Singer.io tap for extracting data",
     author="Stitch",
@@ -15,7 +15,7 @@ setup(
     ],
     entry_points="""
     [console_scripts]
-    tap_facebook=tap_facebook_reviews:main
+    tap-facebook-reviews=tap_facebook_reviews:main
     """,
     packages=["tap_facebook_reviews"],
     package_data = {
